@@ -87,11 +87,11 @@ pub fn collect_schema_coordinates(
 struct SchemaCoordinatesVisitor {}
 
 impl SchemaCoordinatesVisitor {
-    fn resolve_type_name(&self, t: Type<String>) -> String {
+    fn resolve_type_name(t: Type<String>) -> String {
         match t {
             Type::NamedType(value) => value,
-            Type::ListType(t) => self.resolve_type_name(*t),
-            Type::NonNullType(t) => self.resolve_type_name(*t),
+            Type::ListType(t) => Self::resolve_type_name(*t),
+            Type::NonNullType(t) => Self::resolve_type_name(*t),
         }
     }
 
@@ -101,12 +101,11 @@ impl SchemaCoordinatesVisitor {
         type_name: &str,
     ) -> Option<Vec<String>> {
         let mut visited_types = Vec::new();
-        self._resolve_references(schema, type_name, &mut visited_types);
+        SchemaCoordinatesVisitor::_resolve_references(schema, type_name, &mut visited_types);
         Some(visited_types)
     }
 
     fn _resolve_references(
-        &self,
         schema: &SchemaDocument<'static, String>,
         type_name: &str,
         visited_types: &mut Vec<String>,
@@ -121,8 +120,9 @@ impl SchemaCoordinatesVisitor {
 
         if let Some(TypeDefinition::InputObject(input_type)) = named_type {
             for field in &input_type.fields {
-                let field_type = self.resolve_type_name(field.value_type.clone());
-                self._resolve_references(schema, &field_type, visited_types);
+                let field_type =
+                    SchemaCoordinatesVisitor::resolve_type_name(field.value_type.clone());
+                SchemaCoordinatesVisitor::_resolve_references(schema, &field_type, visited_types);
             }
         }
     }
@@ -178,7 +178,7 @@ impl<'a> OperationVisitor<'a, SchemaCoordinatesContext> for SchemaCoordinatesVis
             return;
         }
 
-        let type_name = self.resolve_type_name(var.var_type.clone());
+        let type_name = SchemaCoordinatesVisitor::resolve_type_name(var.var_type.clone());
         let type_def = info.schema.type_by_name(&type_name);
 
         if let Some(TypeDefinition::Scalar(scalar_def)) = type_def {

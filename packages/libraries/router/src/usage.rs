@@ -437,12 +437,14 @@ mod hive_usage_tests {
         async fn new() -> Self {
             let server: MockServer = MockServer::start();
             let usage_endpoint = server.url("/usage");
-            let mut config = Config::default();
-            config.enabled = Some(true);
-            config.registry_usage_endpoint = Some(usage_endpoint.to_string());
-            config.registry_token = Some("123".into());
-            config.buffer_size = Some(1);
-            config.flush_interval = Some(1);
+            let config: Config = Config {
+                enabled: Some(true),
+                registry_usage_endpoint: Some(usage_endpoint.to_string()),
+                registry_token: Some("123".into()),
+                buffer_size: Some(1),
+                flush_interval: Some(1),
+                ..Default::default()
+            };
 
             let plugin_service = UsagePlugin::new(
                 PluginInit::fake_builder()
@@ -463,7 +465,7 @@ mod hive_usage_tests {
             tokio::time::sleep(tokio::time::Duration::from_secs(1))
         }
 
-        fn activate_usage_mock(&self) -> Mock {
+        fn activate_usage_mock(&self) -> Mock<'_> {
             self.mocked_upstream.mock(|when, then| {
                 when.method(POST).path("/usage").matches(|r| {
                     // This mock also validates that the content of the reported usage is valid
